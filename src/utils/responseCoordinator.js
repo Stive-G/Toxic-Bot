@@ -182,7 +182,7 @@ export class ResponseCoordinator {
     const embed = buildUserErrorEmbed(
       'validation',
       `Usage\n\`${usageLine}\``,
-      { titleOverride: 'Wrong Usage' }
+      { titleOverride: 'Wrong usage' }
     );
 
     const result = await this.respond({ embeds: [embed] });

@@ -23,8 +23,8 @@ export const botConfig = {
     // 5 = Competing
     activities: [
       {
-        // Text users will see (example: "Playing /help | Titan Bot").
-        name: "Made with ❤️",
+        // Text users will see (example: "Playing /help | Toxic Bot").
+        name: "Playing /help | Toxic Bot",
         // Activity type number (0 = Playing).
         type: 0,
       },
@@ -91,7 +91,7 @@ export const botConfig = {
   embeds: {
     colors: {
       // Main brand colors.
-      primary: "#336699",
+      primary: "#39FF14",
       secondary: "#2F3136",
 
       // Standard status colors for success/error/warning/info messages.
@@ -139,7 +139,7 @@ export const botConfig = {
     },
     footer: {
       // Default footer text used in bot embeds.
-      text: "Titan Bot",
+      text: "Toxic Bot",
       // Footer icon URL (null = no icon).
       icon: null,
     },

@@ -1,7 +1,7 @@
 {
-  "name": "titanbot",
+  "name": "toxic-bot",
   "version": "2.1.0",
-  "description": "Modular Ultimate Community Bot by Touchpoint Support",
+  "description": "Modular Discord community bot",
   "main": "src/app.js",
   "type": "module",
   "scripts": {

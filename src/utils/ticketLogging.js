@@ -119,7 +119,7 @@ async function createTicketLogEmbed(guild, event) {
   let inlineFields = [];
   let fields = [];
   let author = null;
-  let footer = { text: 'TitanBot Ticketing' };
+  let footer = { text: 'Toxic Bot Ticketing' };
 
   switch (event.type) {
     case 'open':
@@ -277,4 +277,3 @@ export function validateLogChannel(channel, botMember) {
 
   return { valid: true };
 }
-

@@ -1,275 +1,135 @@
-# TitanBot - Ultimate Discord Bot
+# Toxic Bot
 
-**TitanBot** is a powerful, feature-rich Discord bot designed to enhance your server experience with comprehensive moderation tools, engaging economy systems, utility features, and much more. Built with modern Discord.js v14 and PostgreSQL for optimal performance and data persistence.
+Toxic Bot is a self-hosted Discord bot for community management. It combines moderation, tickets, verification, welcome flows, giveaways, leveling, economy, utility tools, server statistics, and music playback in one modular Node.js application.
 
-[![Support Server](https://img.shields.io/badge/-Support%20Server-%235865F2?logo=discord&logoColor=white&style=flat-square&logoWidth=20)](https://discord.gg/8kJBYhTGW9)
-[![Discord.js](https://img.shields.io/npm/v/discord.js?style=flat-square&labelColor=%23202225&color=%23202225&logo=npm&logoColor=white&logoWidth=20)](https://www.npmjs.com/package/discord.js)
-![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-%23336791?logo=postgresql&logoColor=white&style=flat-square&logoWidth=20)
+The project uses discord.js v14, PostgreSQL for persistent data, and Lavalink v4 for music playback.
 
-## Table of Contents
+## Features
 
-- [Features Overview](#features-overview)
-- [Quick Setup](#quick-setup)
-- [Manual Installation Steps](#manual-installation-steps)
-- [Support Server](https://discord.gg/QnWNz2dKCE)
-- [Required Bot Intents](#bot-intents)
-- [Contributing](CONTRIBUTING.md)
+- Moderation: bans, kicks, timeouts, warnings, cases, notes, purge, and mass actions.
+- Community: tickets, applications, verification, reaction roles, welcome/goodbye messages, auto-roles, birthdays, reports, and join-to-create voice channels.
+- Engagement: leveling, economy, shop, giveaways, counting game, polls, and fun commands.
+- Operations: audit logging, configurable server counters, dashboards, backups, migrations, and health endpoint.
+- Music: Lavalink-powered queues, player controls, slash commands, and prefix shortcuts.
 
-<a name="features-overview"></a>
-## Features Overview
+## Architecture
 
-TitanBot offers a complete suite of tools for Discord server management and community engagement:
+`src/commands` contains slash-command definitions grouped by feature. `src/events` subscribes to Discord events, `src/handlers` loads and routes commands/components, and `src/interactions` implements buttons, select menus, and modals. Business rules live in `src/services`; `src/utils` provides shared helpers, persistence adapters, embeds, logging, validation, and migration support. PostgreSQL is the primary store, with an in-memory fallback intended only for local development.
 
-<table>
-<tr>
-<td width="50%" valign="top">
+## Prerequisites
 
-### Moderation & Administration
-- **Mass Actions** - Bulk ban/kick capabilities
-- **User Notes** - Keep detailed moderation records
-- **Case Management** - View and track all mod actions
+- Node.js 18 or later (Node.js 20 is used by Docker and CI)
+- A PostgreSQL server, or Docker Compose
+- A Discord application and bot token
+- Lavalink v4 for music playback (included in Docker Compose)
 
-### Economy System
-- **Shop & Inventory** - Buy and manage items
-- **Gambling** - Risk it for rewards
-- **Pay System** - Transfer money between users
+## Discord Developer Portal
 
-### Fun & Entertainment
-- **Random Facts** - Learn something new
-- **Wanted Poster** - Create fun wanted images
-- **Text Reversal** - Reverse any text
+Create an application at the [Discord Developer Portal](https://discord.com/developers/applications), add a bot, and copy its token and application ID into `.env`. Enable these privileged gateway intents when the bot needs the corresponding features:
 
-### Advanced Ticket System
-- **Claim & Priority** - Staff ticket management
-- **Ticket Limits** - Prevent spam
-- **Transcript System** - Save ticket history
+- Message Content
+- Server Members
+- Server Presences (only if you later add a feature requiring it)
 
-### Server Stats
-- **Member Counter** - Live member count channels
-- **Voice Counters** - Track voice stats
-- **Dynamic Updates** - Real-time channel updates
+Invite the bot with the `bot` and `applications.commands` OAuth2 scopes. Grant only the permissions needed by the modules you enable; typical installations need View Channels, Send Messages, Embed Links, Read Message History, Manage Messages, Manage Channels, Manage Roles, Kick Members, Ban Members, Moderate Members, and Connect.
 
-### Reaction Roles
-- **Role Assignment** - Self-assignable roles
-- **Emoji Selection** - Reaction-based system
-- **Multi-role Support** - Multiple role options
+## Installation
 
-</td>
-<td width="50%" valign="top">
+1. Clone the repository and install dependencies:
 
-### Leveling & XP System
-- **XP Tracking** - Automatic message-based XP
-- **Level Roles** - Auto-assign roles by level
-- **Custom Configuration** - Personalize leveling
-
-### Giveaways & Events
-- **Multiple Winners** - Support multi-winner giveaways
-- **Auto Picking** - Automatic winner selection
-- **Reroll System** - Pick new winners if needed
-
-### Birthday System
-- **Birthday Tracking** - Never miss a birthday
-- **Auto Announcements** - Celebrate automatically
-- **Timezone Support** - Accurate worldwide tracking
-
-### Utility Tools
-- **Report System** - Report issues to staff
-- **Todo Lists** - Personal task management
-- **First Message** - Jump to channel's first message
-
-### Welcome System
-- **Welcome Messages** - Greet new members
-- **Auto Roles** - Assign roles on join
-- **Custom Embeds** - Personalized messages
-  
-### Music
-- **24/7 Mode** - Play music 24/7
-- **Interative Button System** - Manage music through buttons
-- **Supports EVERY platform** - Supports spotify, deezer, youtube, apple music
-  
-</td>
-</tr>
-</table>
-
-<a name="quick-setup"></a>
-## Quick Setup (Recommended for non-coders)
-
-### Video Tutorial
-For a detailed step-by-step setup guide, watch our comprehensive video tutorial:
-[**TitanBot Setup Tutorial**](https://www.youtube.com/@TouchDisc)
-
-## Docker Deployment (Recommended)
-
-TitanBot is fully containerized for easy deployment.
-
-1. **Clone the repository:**
    ```bash
-   git clone https://github.com/codebymitch/TitanBot.git
-   cd TitanBot
+   git clone https://github.com/Stive-G/Toxic-Bot.git
+   cd Toxic-Bot
+   npm ci
    ```
 
-2. **Configure environment variables:**
-   Create a `.env` file from `.env.example` and fill in your bot details and PostgreSQL credentials.
+2. Create your local configuration:
 
-3. **Start the containers:**
-   ```bash
-   docker-compose up -d
-   ```
-
-This will start the bot, PostgreSQL, and Lavalink (when music is enabled).
-
-### Music
-
-Music uses [Lavalink v4](https://github.com/lavalink-devs/Lavalink) via [Riffy](https://github.com/riffy-rb/riffy), similar to [Musicify](https://github.com/codebymitch/Musicify).
-
-1. Set in `.env`:
-   ```env
-   LAVALINK_HOST=lavalink
-   LAVALINK_PORT=2333
-   LAVALINK_PASSWORD=youshallnotpass
-   LAVALINK_SECURE=false
-   ```
-2. With Docker Compose, Lavalink is included automatically when you `docker compose up`.
-3. On Railway, deploy Lavalink separately or as another service and point `LAVALINK_HOST` at the private hostname.
-4. Use `/play <song>` from a voice channel, or `/join` to connect without playing. Prefix shortcuts: `join`, `np`, `leave`, `pause`, `resume`, `skip`, `stop`, `volume <0-100>`, or `music <subcommand>`. Use `/nowplaying` and `/queue` for status; `/music` for loop, shuffle, seek, and other controls.
-
-### Using GitHub Container Registry
-
-The bot is automatically published to GitHub Container Registry on every push to main.
-
-```bash
-docker pull ghcr.io/codebymitch/titanbot:main
-```
-
-<a name="manual-installation-steps"></a>
-## Manual Installation Steps
-
-### Prerequisites
-- Node.js 18.0.0 or higher
-- PostgreSQL server (recommended) or memory storage fallback
-- Discord bot application with proper intents
-
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/codebymitch/TitanBot.git
-   cd TitanBot
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment Variables**
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` with your configuration (only the following variables require configuration, leave remaining variables as default):
-   ```env
-   # Discord Bot Configuration
-   DISCORD_TOKEN=your_discord_bot_token_here
-   CLIENT_ID=your_discord_client_id_here
-   GUILD_ID=your_discord_guild_id_here
 
-   # PostgreSQL Configuration (Primary Database)
-   POSTGRES_URL=postgresql://postgres:yourpassword@localhost:5432/titanbot
-   POSTGRES_HOST=localhost
-   POSTGRES_PORT=5432
-   POSTGRES_DB=titanbot
-   POSTGRES_USER=postgres
-   POSTGRES_PASSWORD=yourpassword
-   ```
+3. Set `DISCORD_TOKEN`, `CLIENT_ID`, and secure PostgreSQL and Lavalink credentials in `.env`. For one server, set `GUILD_ID`; set `MULTI_GUILD=true` to register global commands instead.
 
-   Production note:
-   - `NODE_ENV=production`
-   - `LOG_LEVEL=warn` for a clean production console (critical issues + startup status)
-   - `LOG_LEVEL=info` if you want more detailed operational logs
-   - If your chosen `PORT` is already used, TitanBot automatically tries the next port(s)
+4. Prepare and verify the database:
 
-   Environment options reference:
-   - `NODE_ENV`: `development`, `production`, `test` (any non-`production` value is treated as non-production)
-   - `LOG_LEVEL`: `error`, `warn`, `info`, `http`, `verbose`, `debug`, `silly`
-   - Accepted aliases for `LOG_LEVEL` in this bot: `warns`, `warning`, `warnings` → `warn`
-
-   Recommended production `.env` (easy mode + default mode):
-   ```env
-   NODE_ENV=production
-   LOG_LEVEL=warn
-   WEB_HOST=0.0.0.0
-   PORT=3000
-   PORT_RETRY_ATTEMPTS=5
-   ```
-   This gives clear startup/online status messages while keeping logs simple for non-technical operators.
-   If port `3000` is busy, the bot tries the next available ports automatically (up to `PORT_RETRY_ATTEMPTS`).
-
-### Running in multiple servers (optional)
-
-Most users run TitanBot on a **single server** with `GUILD_ID` set (default tutorial setup). If you want commands to work in **every server** the bot is invited to, opt in with:
-
-```env
-MULTI_GUILD=true
-```
-
-Notes for multi-server mode:
-- `GUILD_ID` is not used for command registration when `MULTI_GUILD=true` (you can leave it set or remove it)
-- Global slash commands may take up to about an hour to propagate on first deploy
-- Each server still has **isolated** config, economy, tickets, leveling, and other data
-- In the [Discord Developer Portal](https://discord.com/developers/applications), ensure your bot is not restricted to a single guild if you plan to invite it elsewhere
-- Generate an OAuth2 invite URL from the [Discord Developer Portal](https://discord.com/developers/applications) (OAuth2 → URL Generator, scopes: `bot` and `applications.commands`)
-
-4. **Setup PostgreSQL Database** (Optional but recommended)
    ```bash
-   # Create database and user
-   createdb titanbot
-   createuser titanbot
-   psql -c "ALTER USER titanbot PASSWORD 'yourpassword';"
-   psql -c "GRANT ALL PRIVILEGES ON DATABASE titanbot TO titanbot;"
-   ```
-
-5. **Verify Database Setup**
-   ```bash
+   npm run migrate
    npm run migrate:check
    ```
 
-6. **Start the Bot**
+5. Start the bot:
+
    ```bash
    npm start
    ```
-<a name="bot-intents"></a>
 
-## Required Bot Intents
-TitanBot requires the following Discord intents:
-- **Guilds**
-- **Guild Messages**
-- **Message Content**
-- **Guild Members**
-- **Guild Message Reactions**
-- **Guild Voice States**
-- **Direct Messages**
-- **Bot**
-- **Applications.commands**
+## PostgreSQL
 
-### Required Permissions
-- **View Channels**
-- **Send Messages**
-- **Embed Links**
-- **Attach Files**
-- **Read Message History**
-- **Manage Messages**
-- **Manage Channels**
-- **Manage Roles**
-- **Kick Members**
-- **Manage Messages**
-- **Ban Members**
-- **Moderate Members**
-- **Connect**
+The default local database name and user are `toxicbot`. Configure either `POSTGRES_URL` (recommended for managed providers) or the `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` variables. Do not commit `.env` or reuse the example password.
+
+For a local server:
+
+```bash
+createdb toxicbot
+createuser toxicbot
+psql -c "ALTER USER toxicbot PASSWORD 'use-a-unique-strong-password';"
+psql -c "GRANT ALL PRIVILEGES ON DATABASE toxicbot TO toxicbot;"
+```
+
+## Lavalink
+
+Music commands require Lavalink v4. Set `LAVALINK_HOST`, `LAVALINK_PORT`, `LAVALINK_PASSWORD`, and `LAVALINK_SECURE` to match your Lavalink server. The supplied `lavalink/application.yml` is mounted automatically by Docker Compose. For remote hosting, deploy Lavalink as a private service and point `LAVALINK_HOST` at its private hostname.
+
+## Docker
+
+Docker Compose keeps the existing three-service topology: `toxic-bot`, `toxic-bot-postgres`, and `toxic-bot-lavalink` on an internal `toxic-bot-network` bridge.
+
+```bash
+cp .env.example .env
+# Set all required credentials in .env before continuing.
+docker compose up -d --build
+docker compose logs -f toxic-bot
+```
+
+Persistent PostgreSQL data is stored in the `toxic-bot-postgres-data` volume. Stop the stack with `docker compose down`; do not remove the volume unless you intentionally want to discard database data.
+
+## Configuration and deployment
+
+`.env.example` documents every supported environment variable. Use `NODE_ENV=production` in deployed environments and keep `LOG_LEVEL=warn` unless operational troubleshooting requires more detail. The bot exposes its health service on `PORT` (default `3000`). Keep PostgreSQL and Lavalink private to the Compose network or your provider VPC.
+
+For a multi-server deployment, set `MULTI_GUILD=true`. Global Discord commands can take time to propagate after a first deployment.
+
+## Updates and maintenance
+
+Before updating, back up the database:
+
+```bash
+npm run backup:db
+```
+
+Then update code and dependencies, run migrations, and restart:
+
+```bash
+git pull --ff-only
+npm ci
+npm run migrate
+docker compose up -d --build
+```
+
+Useful checks:
+
+```bash
+npm test
+npm run migrate:check
+npm run migrate:status
+npm run backup:drill
+```
+
+## Contributing and security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidance and [SECURITY.md](SECURITY.md) for vulnerability reporting and self-hosting hardening.
 
 ## License
 
-TitanBot is released under the MIT License. See [LICENSE](LICENSE) for details.
-
-## Thank You
-
-Thank you for choosing TitanBot for your Discord server! We're constantly working to improve and add new features based on community feedback.
-
-*Last updated: May 2026*
+Toxic Bot is distributed under the [MIT License](LICENSE).

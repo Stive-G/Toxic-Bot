@@ -1,60 +1,67 @@
+name: toxic-bot
+
 services:
   bot:
     build: .
-    container_name: titanbot
+    container_name: toxic-bot
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - CLIENT_ID=${CLIENT_ID}
-      - GUILD_ID=${GUILD_ID}
-      - MULTI_GUILD=${MULTI_GUILD:-false}
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - LAVALINK_HOST=lavalink
-      - LAVALINK_PORT=2333
-      - LAVALINK_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
-      - LAVALINK_SECURE=false
-      - PORT=3000
+      NODE_ENV: production
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      CLIENT_ID: ${CLIENT_ID}
+      GUILD_ID: ${GUILD_ID:-}
+      MULTI_GUILD: ${MULTI_GUILD:-false}
+      POSTGRES_URL: postgresql://${POSTGRES_USER:-toxicbot}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-toxicbot}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-toxicbot}
+      POSTGRES_USER: ${POSTGRES_USER:-toxicbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      LAVALINK_HOST: lavalink
+      LAVALINK_PORT: 2333
+      LAVALINK_PASSWORD: ${LAVALINK_PASSWORD:?Set LAVALINK_PASSWORD in .env}
+      LAVALINK_SECURE: "false"
+      PORT: 3000
     depends_on:
       db:
         condition: service_healthy
       lavalink:
         condition: service_started
     networks:
-      - titan-network
+      - toxic-bot-network
 
   lavalink:
     image: ghcr.io/lavalink-devs/lavalink:4
-    container_name: titanbot-lavalink
+    container_name: toxic-bot-lavalink
     restart: unless-stopped
     environment:
-      - LAVALINK_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
+      LAVALINK_PASSWORD: ${LAVALINK_PASSWORD:?Set LAVALINK_PASSWORD in .env}
     volumes:
-      - ./lavalink/application.yml:/opt/Lavalink/application.yml
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
     networks:
-      - titan-network
+      - toxic-bot-network
 
   db:
     image: postgres:15-alpine
-    container_name: titanbot-db
+    container_name: toxic-bot-postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-titanbot}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
-      - POSTGRES_DB=${POSTGRES_DB:-titanbot}
+      POSTGRES_USER: ${POSTGRES_USER:-toxicbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-toxicbot}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - toxic-bot-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - titan-network
+      - toxic-bot-network
 
 networks:
-  titan-network:
+  toxic-bot-network:
     driver: bridge
 
 volumes:
-  postgres_data:
+  toxic-bot-postgres-data:
