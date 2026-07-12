@@ -228,7 +228,7 @@ export default {
       if (scope === 'category') {
         const category = resolveCategoryChoice(client, target);
         if (!category) {
-          return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'No category matched \\`${target}\\`. Use \\`/commands dashboard\\` to browse categories.' });
+          return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Cette catégorie est inconnue ou indisponible dans ce déploiement.' });
         }
 
         if (isDisable) {

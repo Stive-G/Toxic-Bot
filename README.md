@@ -48,6 +48,20 @@ docker compose logs -f db
 docker compose logs -f lavalink
 ```
 
+## Modules
+
+Toxic Bot charge uniquement les modules activés dans `src/config/bot.js`. Après une modification globale, redémarrez le bot et réenregistrez les commandes. `/commands dashboard` permet ensuite de gérer les catégories disponibles pour ce serveur ; un module désactivé globalement ne peut pas être activé depuis Discord et reste simplement présent dans le code.
+
+Activés par défaut : Core, Moderation, Welcome, Verification, Reaction Roles, Join To Create, Music, Utility, Tools, Giveaways, Server Stats, Fun et Logging.
+
+Désactivés par défaut : Tickets, Economy, Leveling, Birthday, Community/Applications et Search.
+
+Diagnostic local :
+
+```bash
+npm run commands:check
+```
+
 ## Migrations PostgreSQL
 
 Après un démarrage de la base, appliquez et vérifiez les migrations :

@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { Collection } from 'discord.js';
 import { logger } from '../utils/logger.js';
+import { getModuleSummary, isCategoryEnabled } from '../config/modules.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,12 +51,48 @@ async function getAllFiles(directory, fileList = []) {
     return fileList;
 }
 
+export function getCommandCategory(commandsPath, filePath) {
+    return path.relative(commandsPath, filePath).split(path.sep)[0];
+}
+
+export function filterCommandFiles(commandFiles, commandsPath) {
+    return commandFiles.filter((filePath) => isCategoryEnabled(getCommandCategory(commandsPath, filePath)));
+}
+
+export function assertCommandLimit(commands) {
+    if (commands.length <= MAX_COMMANDS) return;
+
+    const byCategory = new Map();
+    for (const command of commands) {
+        byCategory.set(command.category, (byCategory.get(command.category) || 0) + 1);
+    }
+
+    const breakdown = [...byCategory.entries()]
+        .map(([category, count]) => `${category}: ${count}`)
+        .join(', ');
+    throw new Error(
+        `Active command count (${commands.length}) exceeds Discord's ${MAX_COMMANDS}-command limit. ` +
+        `Disable modules before starting the bot. Categories: ${breakdown}`,
+    );
+}
+
 export async function loadCommands(client) {
     client.commands = new Collection();
     const commandsPath = path.join(__dirname, '../commands');
-    const commandFiles = await getAllFiles(commandsPath);
-    
-    logger.info(`Found ${commandFiles.length} command files to load`);
+    const discoveredFiles = await getAllFiles(commandsPath);
+    const commandFiles = filterCommandFiles(discoveredFiles, commandsPath);
+    const disabledCategories = [...new Set(
+        discoveredFiles
+            .map((filePath) => getCommandCategory(commandsPath, filePath))
+            .filter((category) => !isCategoryEnabled(category)),
+    )].sort();
+    const moduleSummary = getModuleSummary();
+
+    for (const category of disabledCategories) {
+        logger.info(`Skipping disabled command category: ${category}`);
+    }
+    logger.info(`Enabled modules: ${moduleSummary.enabled.join(', ')}`);
+    logger.info(`Disabled modules: ${moduleSummary.disabled.join(', ')}`);
     
     const uniqueCommandNames = new Set();
     
@@ -64,8 +101,7 @@ export async function loadCommands(client) {
             const normalizedPath = filePath.replace(/\\/g, '/');
             
             const commandName = path.basename(filePath, '.js');
-            const commandDir = path.dirname(filePath);
-            const category = path.basename(commandDir);
+            const category = getCommandCategory(commandsPath, filePath);
             
             const commandModule = await import(`file://${filePath}`);
             const command = commandModule.default || commandModule;
@@ -99,23 +135,8 @@ export async function loadCommands(client) {
         }
     }
     
-    const commandsWithSubcommands = Array.from(client.commands.values()).filter(cmd => {
-        const subcommands = getSubcommandInfo(cmd.data.toJSON());
-        return subcommands.length > 0;
-    });
-    
-    const totalSubcommands = commandsWithSubcommands.reduce((total, cmd) => {
-        return total + getSubcommandInfo(cmd.data.toJSON()).length;
-    }, 0);
-    
-    const uniqueCommands = new Set();
-    for (const [name, command] of client.commands.entries()) {
-        if (command.data && command.data.name) {
-            uniqueCommands.add(command.data.name);
-        }
-    }
-    
-    logger.info(`Loaded ${uniqueCommands.size} commands`);
+    assertCommandLimit([...client.commands.values()]);
+    logger.info(`Loaded ${client.commands.size} active commands`);
     return client.commands;
 }
 
@@ -228,14 +249,8 @@ function prepareCommandsForRegistration(commands, { multiGuild = false } = {}) {
         );
     }
 
-    if (commands.length <= MAX_COMMANDS) {
-        return commands;
-    }
-
-    logger.warn(`Command count (${commands.length}) exceeds Discord limit (${MAX_COMMANDS}), truncating...`);
-    const truncated = commands.slice(0, MAX_COMMANDS);
-    logger.info(`Truncated to ${truncated.length} commands for registration`);
-    return truncated;
+    assertCommandLimit(commands);
+    return commands;
 }
 
 async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {

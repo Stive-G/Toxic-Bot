@@ -11,6 +11,7 @@ import { getGuildConfig } from '../services/guildConfig.js';
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
 import { createEmbed } from '../utils/embeds.js';
 import { isCommandEnabled } from '../services/commandAccessService.js';
+import { isCategoryEnabled } from '../config/modules.js';
 import {
   getCountingGameConfig,
   saveCountingGameConfig,
@@ -124,6 +125,7 @@ async function handlePrefixCommand(message, client) {
 }
 
 async function handleCountingGame(message, client) {
+  if (!isCategoryEnabled('Fun')) return false;
   try {
     const config = await getCountingGameConfig(client, message.guild.id);
     if (!config.enabled || !config.channelId || message.channel.id !== config.channelId) {
@@ -160,6 +162,7 @@ async function handleCountingGame(message, client) {
 }
 
 async function handleLeveling(message, client) {
+  if (!isCategoryEnabled('Leveling')) return;
   try {
     const rateLimitKey = `xp-event:${message.guild.id}:${message.author.id}`;
     const canProcess = await checkRateLimit(rateLimitKey, MESSAGE_XP_RATE_LIMIT_ATTEMPTS, MESSAGE_XP_RATE_LIMIT_WINDOW_MS);

@@ -8,7 +8,6 @@ Root
 - index.js                    -> process entry point
 - package.json                -> scripts, dependencies, project metadata
 - README.md                   -> setup and usage docs
-- SECURITY.md                 -> security policy
 - scripts/                    -> utility/maintenance scripts (backup, restore, migrate)
 - logs/                       -> runtime log output
 - src/                        -> main bot application code

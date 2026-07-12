@@ -438,31 +438,29 @@ export const botConfig = {
   // =========================
   // Set any feature to `false` to disable it globally.
   features: {
-    // Core systems.
-    economy: true,
-    leveling: true,
+    // Core cannot be disabled: it contains recovery and configuration commands.
+    core: true,
     moderation: true,
-    logging: true,
     welcome: true,
-
-    // Community engagement systems.
-    tickets: true,
-    giveaways: true,
-    birthday: true,
-    counter: true,
-
-    // Security and self-service systems.
     verification: true,
     reactionRoles: true,
     joinToCreate: true,
-
-    // Utility/quality-of-life modules.
-    voice: true,
-    search: true,
-    tools: true,
+    music: true,
     utility: true,
-    community: true,
+    tools: true,
+    giveaways: true,
+    counter: true,
     fun: true,
+
+    // Logging is kept available for the single-server configuration wizard.
+    logging: true,
+    tickets: false,
+    economy: false,
+    leveling: false,
+    birthday: false,
+    applications: false,
+    search: false,
+    community: false,
   },
 };
 
