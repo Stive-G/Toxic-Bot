@@ -62,6 +62,12 @@ Diagnostic local :
 npm run commands:check
 ```
 
+## Configuration du serveur
+
+- `/setup` ouvre l’assistant d’administration ; `/setup verify` vérifie permissions, services et modules.
+- `/config show` affiche les réglages, `/config edit` ouvre les menus existants et `/config reset` demande une confirmation explicite.
+- `/diagnostic` affiche l’état de Discord, PostgreSQL, Lavalink, des modules et du runtime.
+
 ## Migrations PostgreSQL
 
 Après un démarrage de la base, appliquez et vérifiez les migrations :

@@ -415,6 +415,48 @@ class ConfigService {
         };
     }
 
+    // Stable public API used by configuration commands and future modules.
+    static async get(client, guildId) {
+        return getGuildConfig(client, guildId);
+    }
+
+    static async set(client, guildId, updates, adminId = null) {
+        if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+            throw createError('Invalid configuration update', ErrorTypes.VALIDATION, 'Configuration data is invalid.');
+        }
+        return this.bulkUpdate(client, guildId, updates, adminId);
+    }
+
+    static async validate(client, guildId, updates) {
+        const guild = client.guilds.cache.get(guildId);
+        if (!guild) throw createError('Guild not found', ErrorTypes.VALIDATION, 'Server not found.');
+        for (const [key, value] of Object.entries(updates || {})) {
+            this.validateConfigKeySafety(key);
+            await this.validateConfigValue(key, value, guild);
+        }
+        return true;
+    }
+
+    static async exists(client, guildId) {
+        const config = await getGuildConfig(client, guildId);
+        return Boolean(config?.setupWizardCompleted);
+    }
+
+    static async reset(client, guildId, key = null, adminId = null) {
+        if (key) return this.resetSetting(client, guildId, key, adminId);
+        const current = await getGuildConfig(client, guildId);
+        const resetConfig = {
+            ...current,
+            prefix: undefined,
+            modRole: null,
+            welcomeChannel: null,
+            setupWizardCompleted: false,
+            logging: { enabled: false, channels: { audit: null, applications: null, reports: null }, ignore: { users: [], channels: [] }, enabledEvents: {} },
+        };
+        await setGuildConfig(client, guildId, resetConfig);
+        return { success: true, reset: 'all' };
+    }
+
     static async bulkUpdate(client, guildId, updates, adminId) {
         logger.info(`[CONFIG_SERVICE] Bulk updating settings`, {
             guildId,
