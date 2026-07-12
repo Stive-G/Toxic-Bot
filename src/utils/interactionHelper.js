@@ -26,6 +26,10 @@ function sanitizeEditReplyOptions(options = {}) {
     return rest;
 }
 
+function interactionState(interaction) {
+    return `type=${interaction?.type ?? 'unknown'} deferred=${Boolean(interaction?.deferred)} replied=${Boolean(interaction?.replied)}`;
+}
+
 export class InteractionHelper {
     static getCoordinator(interaction) {
         return interaction?._responseCoordinator || null;
@@ -106,6 +110,7 @@ export class InteractionHelper {
     static async safeDefer(interaction, options = {}) {
         try {
             if (interaction.deferred || interaction.replied) {
+                logger.debug(`Skipping defer for interaction ${interaction.id}: ${interactionState(interaction)}`);
                 return true;
             }
 
@@ -207,12 +212,11 @@ export class InteractionHelper {
                 return false;
             }
 
-            if (coordinator && (interaction._isPrefixCommand || coordinator.hasResponded())) {
-                if (coordinator.hasResponded()) {
-                    await coordinator.edit(sanitizeEditReplyOptions(options));
-                } else {
-                    await coordinator.respond(options);
-                }
+            logger.debug(`Replying to interaction ${interaction.id}: ${interactionState(interaction)}`);
+
+            if (coordinator && interaction._isPrefixCommand) {
+                if (coordinator.hasResponded()) await coordinator.edit(sanitizeEditReplyOptions(options));
+                else await coordinator.respond(options);
                 return true;
             }
 
@@ -238,6 +242,50 @@ export class InteractionHelper {
                 return false;
             }
             logger.error('Failed to reply:', error);
+            return false;
+        }
+    }
+
+    static async safeFollowUp(interaction, options) {
+        try {
+            if (!this.isInteractionValid(interaction)) {
+                logger.warn(`Interaction ${interaction.id} has expired before followUp, ignoring`);
+                return false;
+            }
+
+            logger.debug(`Following up interaction ${interaction.id}: ${interactionState(interaction)}`);
+            await interaction.followUp(options);
+            return true;
+        } catch (error) {
+            if (isInteractionUnavailableError(error)) {
+                logger.warn(`Interaction ${interaction.id} unavailable during followUp:`, error.message);
+                return false;
+            }
+            logger.error('Failed to follow up:', error);
+            return false;
+        }
+    }
+
+    static async safeDeferUpdate(interaction) {
+        try {
+            if (!this.isInteractionValid(interaction)) {
+                logger.warn(`Interaction ${interaction.id} has expired before deferUpdate, ignoring`);
+                return false;
+            }
+
+            if (interaction.deferred || interaction.replied) {
+                logger.debug(`Skipping deferUpdate for interaction ${interaction.id}: ${interactionState(interaction)}`);
+                return true;
+            }
+
+            await interaction.deferUpdate();
+            return true;
+        } catch (error) {
+            if (isInteractionUnavailableError(error)) {
+                logger.warn(`Interaction ${interaction.id} unavailable during deferUpdate:`, error.message);
+                return false;
+            }
+            logger.error('Failed to defer component update:', error);
             return false;
         }
     }

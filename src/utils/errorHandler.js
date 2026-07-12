@@ -249,8 +249,10 @@ async function sendErrorResponse(interaction, embed, context = {}) {
             errorMessage.flags = MessageFlags.Ephemeral;
         }
 
-        if (interaction.deferred || interaction.replied) {
+        if (interaction.deferred && !interaction.replied) {
             await interaction.editReply(errorMessage);
+        } else if (interaction.replied) {
+            await interaction.followUp(errorMessage);
         } else {
             await interaction.reply(errorMessage);
         }

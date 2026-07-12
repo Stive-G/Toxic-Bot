@@ -1,6 +1,5 @@
 import {
     SlashCommandBuilder,
-    PermissionFlagsBits,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
@@ -22,6 +21,7 @@ import { getGuildConfig, setConfigValue } from '../../services/guildConfig.js';
 import ConfigService from '../../services/configService.js';
 import { logger } from '../../utils/logger.js';
 import { botConfig } from '../../config/bot.js';
+import { isServerAdmin } from '../../utils/adminAccess.js';
 
 const DASHBOARD_CUSTOM_ID = 'config_select';
 const WIZARD_BUTTON_ID = 'config_wizard';
@@ -35,7 +35,7 @@ const DM_DISABLED_HELP = [
 ].join('\n');
 
 async function notifyWizardStarted(buttonInteraction) {
-    await buttonInteraction.followUp({
+    await InteractionHelper.safeFollowUp(buttonInteraction, {
         embeds: [infoEmbed(
             'Setup Wizard Started',
             'Check your DMs — I sent you the first setup question there.\n\nAnswer each question in that DM. Type `skip` to keep the current value.',
@@ -45,10 +45,10 @@ async function notifyWizardStarted(buttonInteraction) {
 }
 
 async function notifyWizardDmBlocked(buttonInteraction) {
-    await replyUserError(buttonInteraction, {
-        type: ErrorTypes.USER_INPUT,
-        message: `I couldn't send you a DM. Enable DMs from this server, then try again.\n\n${DM_DISABLED_HELP}`,
-    }).catch(() => {});
+    await InteractionHelper.safeFollowUp(buttonInteraction, {
+        embeds: [buildUserErrorEmbed(ErrorTypes.USER_INPUT, `I couldn't send you a DM. Enable DMs from this server, then try again.\n\n${DM_DISABLED_HELP}`)],
+        flags: MessageFlags.Ephemeral,
+    });
 }
 
 function formatChannelMention(guild, channelId) {
@@ -273,7 +273,7 @@ async function runSetupWizard(buttonInteraction, config, guild, client, rootInte
     const user = buttonInteraction.user;
 
     if (activeWizardSessions.has(user.id)) {
-        await buttonInteraction.followUp({
+        await InteractionHelper.safeFollowUp(buttonInteraction, {
             embeds: [warningEmbed('Setup Already Running', 'You already have a setup wizard open in your DMs. Reply there to continue, or type `cancel` to stop it.')],
             flags: MessageFlags.Ephemeral,
         }).catch(() => {});
@@ -486,8 +486,7 @@ async function showSettingModal(selectInteraction, guildId, setting) {
             .setChannelSelectMenuComponent(channelSelect);
 
         modal.addLabelComponents(channelLabel);
-        await selectInteraction.showModal(modal);
-        return;
+        return InteractionHelper.safeShowModal(selectInteraction, modal);
     }
 
     if (setting === 'modRole') {
@@ -508,8 +507,7 @@ async function showSettingModal(selectInteraction, guildId, setting) {
             .setRoleSelectMenuComponent(roleSelect);
 
         modal.addLabelComponents(roleLabel);
-        await selectInteraction.showModal(modal);
-        return;
+        return InteractionHelper.safeShowModal(selectInteraction, modal);
     }
 
     const modal = new ModalBuilder()
@@ -525,7 +523,7 @@ async function showSettingModal(selectInteraction, guildId, setting) {
         .setMaxLength(10);
 
     modal.addComponents(new ActionRowBuilder().addComponents(textInput));
-    await selectInteraction.showModal(modal);
+    return InteractionHelper.safeShowModal(selectInteraction, modal);
 }
 
 function resolveSettingModalValue(setting, submitted) {
@@ -586,7 +584,7 @@ async function handleSettingModalSubmit(selectInteraction, rootInteraction, sett
         const value = resolveSettingModalValue(setting, submitted);
         await ConfigService.updateSetting(client, guildId, setting, value, submitted.user.id);
 
-        await submitted.reply({
+        await InteractionHelper.safeReply(submitted, {
             embeds: [successEmbed('Configuration Updated', buildSettingSuccessMessage(setting, value, submitted.guild))],
             flags: MessageFlags.Ephemeral,
         });
@@ -607,7 +605,6 @@ export default {
     data: new SlashCommandBuilder()
         .setName('configwizard')
         .setDescription('Open the server configuration dashboard and setup wizard')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .setDMPermission(false),
     category: 'Core',
 
@@ -618,7 +615,7 @@ export default {
                 return;
             }
 
-            if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+            if (!isServerAdmin(interaction)) {
                 return replyUserError(interaction, {
                     type: ErrorTypes.PERMISSION,
                     message: 'You need the **Manage Server** permission to use this command.',
@@ -648,7 +645,7 @@ export default {
             componentCollector.on('collect', async (componentInteraction) => {
                 try {
                     if (componentInteraction.isButton()) {
-                        await componentInteraction.deferUpdate();
+                        if (!await InteractionHelper.safeDeferUpdate(componentInteraction)) return;
 
                         if (componentInteraction.customId.startsWith(`${WIZARD_BUTTON_ID}:`)) {
                             const latestConfig = await getGuildConfig(interaction.client, interaction.guildId);
@@ -659,7 +656,7 @@ export default {
 
                     if (componentInteraction.isStringSelectMenu()) {
                         const selected = componentInteraction.values[0];
-                        await showSettingModal(componentInteraction, interaction.guildId, selected);
+                        if (!await showSettingModal(componentInteraction, interaction.guildId, selected)) return;
                         await handleSettingModalSubmit(
                             componentInteraction,
                             interaction,
@@ -670,11 +667,15 @@ export default {
                     }
                 } catch (error) {
                     logger.error('Config dashboard interaction error:', error);
-                    await replyUserError(componentInteraction, {
-                        type: ErrorTypes.UNKNOWN,
-                        message: 'Failed to process your selection. Please try again.',
-                    }).catch(() => {});
+                    await InteractionHelper.safeFollowUp(componentInteraction, {
+                        embeds: [buildUserErrorEmbed(ErrorTypes.UNKNOWN, 'Failed to process your selection. Please try again.')],
+                        flags: MessageFlags.Ephemeral,
+                    });
                 }
+            });
+
+            componentCollector.on('end', (_, reason) => {
+                logger.debug('Config dashboard collector ended', { guildId: interaction.guildId, reason });
             });
         } catch (error) {
             logger.error('Config command error:', error);

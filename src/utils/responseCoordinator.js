@@ -106,15 +106,13 @@ export class ResponseCoordinator {
       return this.edit(payload);
     }
 
-    this.interaction.replied = true;
-
     if (this.message?.channel) {
       const sentMessage = await this.message.channel.send(payload);
       this.setReplyMessage(sentMessage);
       return sentMessage;
     }
 
-    if (this.interaction.deferred) {
+    if (this.interaction.deferred && !this.interaction.replied) {
       if (this.isPrefixInteraction()) {
         return this.sendPrefixPayload(payload);
       }
@@ -162,8 +160,13 @@ export class ResponseCoordinator {
       return this.sendPrefixPayload(payload);
     }
 
-    if (this.interaction.deferred || this.interaction.replied) {
+    if (this.interaction.deferred && !this.interaction.replied) {
       await this.interaction.editReply(payload);
+      return null;
+    }
+
+    if (this.interaction.replied) {
+      await this.interaction.followUp(payload);
       return null;
     }
 
