@@ -2,9 +2,14 @@ import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { getModuleSummary } from '../../config/modules.js';
+import { isServerAdmin } from '../../utils/adminAccess.js';
 import pkg from '../../../package.json' with { type: 'json' };
 
 export default { data: new SlashCommandBuilder().setName('diagnostic').setDescription('Affiche l’état technique du bot').setDMPermission(false), category: 'Core', async execute(interaction) {
+  if (!isServerAdmin(interaction)) {
+    return InteractionHelper.safeReply(interaction, { content: 'Accès refusé.', ephemeral: true });
+  }
+
   const db = interaction.client.db?.getStatus?.() || {};
   const modules = getModuleSummary();
   const ping = interaction.client.ws?.ping;

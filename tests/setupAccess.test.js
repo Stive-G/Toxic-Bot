@@ -18,6 +18,15 @@ test('setup access accepts administrators and configured owners but rejects norm
   botConfig.commands.owners = original;
 });
 
+test('diagnostic access accepts administrators and configured owners but rejects normal members', () => {
+  const original = [...botConfig.commands.owners];
+  botConfig.commands.owners = ['owner-id'];
+  assert.equal(isServerAdmin(interaction('admin-id', true)), true);
+  assert.equal(isServerAdmin(interaction('owner-id', false)), true);
+  assert.equal(isServerAdmin(interaction('member-id', false)), false);
+  botConfig.commands.owners = original;
+});
+
 test('setup command exposes start and verify subcommands without Discord permission gate', () => {
   const data = setupCommand.data.toJSON();
   assert.deepEqual(data.options.map((option) => option.name), ['start', 'verify']);
