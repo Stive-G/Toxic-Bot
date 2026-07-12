@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import ConfigService from '../../services/configService.js';
@@ -12,7 +12,7 @@ export default {
     .addSubcommand((sub) => sub.setName('show').setDescription('Affiche la configuration'))
     .addSubcommand((sub) => sub.setName('edit').setDescription('Ouvre les menus de modification'))
     .addSubcommand((sub) => sub.setName('reset').setDescription('Réinitialise la configuration').addBooleanOption((option) => option.setName('confirm').setDescription('Confirmer la réinitialisation').setRequired(true)))
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    ,
   category: 'Core',
   async execute(interaction) {
     if (!isServerAdmin(interaction)) return InteractionHelper.safeReply(interaction, { content: 'Accès refusé.', ephemeral: true });

@@ -1,7 +1,7 @@
 // configService.js
 
 import { logger } from '../utils/logger.js';
-import { getGuildConfig, setGuildConfig } from './guildConfig.js';
+import { GUILD_CONFIG_DEFAULTS, getGuildConfig, setGuildConfig } from './guildConfig.js';
 import { PermissionFlagsBits } from 'discord.js';
 import { createError, ErrorTypes } from '../utils/errorHandler.js';
 import { wrapServiceClassMethods } from '../utils/serviceErrorBoundary.js';
@@ -444,15 +444,7 @@ class ConfigService {
 
     static async reset(client, guildId, key = null, adminId = null) {
         if (key) return this.resetSetting(client, guildId, key, adminId);
-        const current = await getGuildConfig(client, guildId);
-        const resetConfig = {
-            ...current,
-            prefix: undefined,
-            modRole: null,
-            welcomeChannel: null,
-            setupWizardCompleted: false,
-            logging: { enabled: false, channels: { audit: null, applications: null, reports: null }, ignore: { users: [], channels: [] }, enabledEvents: {} },
-        };
+        const resetConfig = { ...GUILD_CONFIG_DEFAULTS, setupWizardCompleted: false };
         await setGuildConfig(client, guildId, resetConfig);
         return { success: true, reset: 'all' };
     }

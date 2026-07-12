@@ -5,7 +5,7 @@ import { BotConfig } from '../config/bot.js';
 import { normalizeGuildConfig, validateGuildConfigOrThrow } from '../utils/schemas.js';
 import { wrapServiceBoundary } from '../utils/serviceErrorBoundary.js';
 
-const GUILD_CONFIG_DEFAULTS = {
+export const GUILD_CONFIG_DEFAULTS = {
     prefix: BotConfig.prefix,
     modRole: null,
     adminRole: null,
